@@ -27,6 +27,8 @@ export async function analyzeFireSafetySI(params: {
   }
 }
 
+import { generateCaptainResponse } from './captainIntelligence';
+
 export async function askCommanderSI(question: string, chamberState: any, isBeginnerMode: boolean): Promise<string> {
   try {
     const res = await fetch('/api/si/ask-commander', {
@@ -40,10 +42,10 @@ export async function askCommanderSI(question: string, chamberState: any, isBegi
     }
 
     const data = await res.json();
-    return data.answer || 'Analysis complete.';
+    return data.answer || generateCaptainResponse(question, chamberState, isBeginnerMode);
   } catch (err) {
-    console.warn('Ask Commander error, returning offline explanation:', err);
-    return `In zero-g, hot gases lack buoyancy so they cannot float upward. With your current parameters (${chamberState.gravityG}g, ${chamberState.gases?.O2 || 21}% O2), the flame burns as a ${chamberState.gravityG === 0 ? 'calm spherical blue bubble' : 'buoyant flickering flame'}. Spacecraft ventilation fans (${chamberState.ventilationSpeed} m/s) directly dictate whether this flame survives or starves itself!`;
+    console.warn('Ask Commander network notice, generating local Captain response:', err);
+    return generateCaptainResponse(question, chamberState, isBeginnerMode);
   }
 }
 

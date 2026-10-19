@@ -213,6 +213,16 @@ export const AVAILABLE_GASES: GasDefinition[] = [
 
 export const AVAILABLE_FUELS: FuelDefinition[] = [
   {
+    id: 'paraffin_candle',
+    name: 'Paraffin Wax Candle (NASA Microgravity CFM Specimen)',
+    category: 'solid_polymer',
+    material: 'Refined hydrocarbon paraffin wax (CnH2n+2) & cotton wick',
+    ignitionTempC: 245,
+    sootIndex: 5,
+    toxicity: 'Low',
+    beginnerDescription: 'The classic NASA space shuttle / ISS experiment: an actual candle floating in microgravity! Without buoyant convection, it burns as a quiet, spherical, faint blue luminous dome with a tiny molten wax pool.',
+  },
+  {
     id: 'kapton_wire',
     name: 'Kapton / Tefzel Wiring Bundle',
     category: 'solid_polymer',

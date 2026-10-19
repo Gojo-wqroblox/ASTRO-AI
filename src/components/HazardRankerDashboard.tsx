@@ -108,8 +108,8 @@ export const HazardRankerDashboard: React.FC<HazardRankerDashboardProps> = ({
             onClick={onOpenCommander}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-mono transition-all active:scale-95"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            Ask Commander
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            Ask Captain
           </button>
 
           <button

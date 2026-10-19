@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Orbit,
   Cpu,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -17,6 +18,8 @@ interface NavbarProps {
   onOpenPresentation: () => void;
   onOpenGlossary: () => void;
   onSelectPreset: (preset: AtmospherePreset) => void;
+  onStartSafetyDrill: () => void;
+  isSafetyDrillActive?: boolean;
   currentPresetId?: string;
   totalGasesCount: number;
 }
@@ -27,6 +30,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenPresentation,
   onOpenGlossary,
   onSelectPreset,
+  onStartSafetyDrill,
+  isSafetyDrillActive,
   currentPresetId,
   totalGasesCount,
 }) => {
@@ -81,6 +86,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
+
+          {/* Safety Drill Button */}
+          <button
+            onClick={onStartSafetyDrill}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono font-bold transition-all active:scale-95 border ${
+              isSafetyDrillActive
+                ? 'bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-950/80 animate-pulse'
+                : 'bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border-rose-500/50 hover:border-rose-400 shadow-md shadow-rose-950/40'
+            }`}
+            title="Start Astronaut Emergency Safety Drill"
+          >
+            <ShieldAlert className="w-4 h-4 text-rose-400" />
+            <span className="hidden sm:inline">Safety Drill</span>
+            <span className="sm:hidden">Drill</span>
+          </button>
 
           {/* Presentation Masterclass Button */}
           <button

@@ -16,16 +16,19 @@ import { FireSafetyRadar } from './components/FireSafetyRadar';
 import { PresentationModal } from './components/PresentationModal';
 import { CommanderAIModal } from './components/CommanderAIModal';
 import { BeginnerGlossaryModal } from './components/BeginnerGlossaryModal';
+import { SafetyDrillHUD } from './components/SafetyDrillHUD';
+import { FlameOpticsSection } from './components/FlameOpticsSection';
 import {
   Flame,
   Info,
   Sparkles,
   ShieldCheck,
+  ShieldAlert,
   AlertTriangle,
   Lightbulb,
   Radio,
-  Radar,
   Globe2,
+  Layers,
 } from 'lucide-react';
 
 export default function App() {
@@ -58,10 +61,12 @@ export default function App() {
 
   // Mode & Modal states
   const [isBeginnerMode, setIsBeginnerMode] = useState<boolean>(true); // Guest Mode by default
-  const [rightPanelTab, setRightPanelTab] = useState<'hazard' | 'radar'>('radar'); // Radar by default
+  const [rightPanelTab, setRightPanelTab] = useState<'hazard' | 'radar'>('hazard'); // SI Hazard Report by default
   const [presentationOpen, setPresentationOpen] = useState<boolean>(false);
   const [glossaryOpen, setGlossaryOpen] = useState<boolean>(false);
   const [commanderOpen, setCommanderOpen] = useState<boolean>(false);
+  const [safetyDrillActive, setSafetyDrillActive] = useState<boolean>(false);
+  const [visualizerSection, setVisualizerSection] = useState<'chamber' | 'flame'>('chamber');
 
   // SI Hazard Analysis Result State
   const [analysis, setAnalysis] = useState<SIAnalysisResult>({
@@ -201,14 +206,34 @@ export default function App() {
         onOpenPresentation={() => setPresentationOpen(true)}
         onOpenGlossary={() => setGlossaryOpen(true)}
         onSelectPreset={handleSelectPreset}
+        onStartSafetyDrill={() => setSafetyDrillActive(true)}
+        isSafetyDrillActive={safetyDrillActive}
         currentPresetId={currentPresetId}
         totalGasesCount={AVAILABLE_GASES.length}
       />
 
       {/* Main Mission Control Console */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-5">
+        {/* Astronaut Emergency Safety Drill HUD (Docked above workspace when active) */}
+        <SafetyDrillHUD
+          isActive={safetyDrillActive}
+          onClose={() => setSafetyDrillActive(false)}
+          gases={gases}
+          onGasChange={handleGasChange}
+          pressureKpa={pressureKpa}
+          onPressureChange={setPressureKpa}
+          ventilationSpeed={ventilationSpeed}
+          onVentilationChange={setVentilationSpeed}
+          selectedFuel={selectedFuel}
+          onFuelChange={setSelectedFuel}
+          onPurgeN2={handlePurgeChamber}
+          onCutFans={handleCutVentilation}
+          onIgniteFlame={() => setIsIgnited(true)}
+          allFuels={AVAILABLE_FUELS}
+        />
+
         {/* Guest Mode Informational Callout Bar */}
-        {isBeginnerMode && (
+        {isBeginnerMode && !safetyDrillActive && (
           <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-cyan-950/60 via-slate-900 to-indigo-950/50 border border-cyan-500/30 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-400 shrink-0">
@@ -219,12 +244,19 @@ export default function App() {
                   Guest Mode Active (Public & Students):
                 </span>
                 <span className="text-slate-300">
-                  All space findings are translated into plain language! Learn why fire forms floating blue balls in orbit, test different gases on the radar, or launch the interactive presentation.
+                  All space findings are translated into plain language! Test your reflexes in the emergency Safety Drill, test different gases in the candle combustion chamber, or launch the interactive presentation.
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <button
+                onClick={() => setSafetyDrillActive(true)}
+                className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white transition-all shadow-md shadow-rose-950/50 flex items-center gap-1.5 active:scale-95 border border-rose-500/60"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-rose-200 animate-pulse" />
+                Safety Drill
+              </button>
               <button
                 onClick={() => setPresentationOpen(true)}
                 className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition-all shadow-md shadow-cyan-500/20 flex items-center gap-1.5 active:scale-95"
@@ -242,25 +274,91 @@ export default function App() {
           </div>
         )}
 
+        {/* Crew Specialist Quick Drill Callout when beginner mode is off and drill is inactive */}
+        {!isBeginnerMode && !safetyDrillActive && (
+          <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-center gap-2 text-xs font-mono text-slate-300">
+              <ShieldAlert className="w-4 h-4 text-rose-400" />
+              <span>Astronaut Readiness Protocol: <strong>Randomized Atmosphere Emergency Scenarios</strong></span>
+            </div>
+            <button
+              onClick={() => setSafetyDrillActive(true)}
+              className="text-xs font-mono font-bold px-3.5 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/50 transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+              Launch Safety Drill
+            </button>
+          </div>
+        )}
+
         {/* Dashboard 2-Column Responsive Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1">
-          {/* Left Column: Chamber Simulator & Multi-Gas Console (7 cols) */}
-          <div className="lg:col-span-7 flex flex-col gap-5">
-            {/* Visual Microgravity Flame Chamber */}
-            <ChamberCanvas
-              gases={gases}
-              pressureKpa={pressureKpa}
-              gravityG={gravityG}
-              ventilationSpeed={ventilationSpeed}
-              fuel={selectedFuel}
-              isIgnited={isIgnited}
-              onToggleIgnite={() => setIsIgnited(!isIgnited)}
-              onCutVentilation={handleCutVentilation}
-              onPurgeChamber={handlePurgeChamber}
-              isBeginnerMode={isBeginnerMode}
-              flameTempK={analysis.flameTempK || 298}
-              dangerLevel={analysis.dangerLevel}
-            />
+          {/* Left Column: Chamber Simulator with Candle & Multi-Gas Console (7 cols) */}
+          <div className="lg:col-span-7 flex flex-col gap-4">
+            {/* Visualizer Section Switcher */}
+            <div className="flex items-center justify-between p-1 bg-slate-950/80 rounded-2xl border border-slate-800">
+              <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                <button
+                  onClick={() => setVisualizerSection('chamber')}
+                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all ${
+                    visualizerSection === 'chamber'
+                      ? 'bg-amber-500/20 text-amber-200 border border-amber-500/50 shadow-md shadow-amber-500/10'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                  }`}
+                >
+                  <span className="text-sm">🕯️</span>
+                  <span>Candle Chamber</span>
+                </button>
+                <button
+                  onClick={() => setVisualizerSection('flame')}
+                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all ${
+                    visualizerSection === 'flame'
+                      ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/50 shadow-md shadow-cyan-500/10'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                  }`}
+                >
+                  <Flame className="w-4 h-4 text-cyan-400 animate-pulse" />
+                  <span>Flame Core & Spectroscopy</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
+                    FLAME SECTION
+                  </span>
+                </button>
+              </div>
+
+              <div className="hidden md:flex items-center gap-2 pr-2 text-[11px] font-mono text-slate-400">
+                <span>Fuel: <strong className="text-white">{selectedFuel.name}</strong></span>
+              </div>
+            </div>
+
+            {/* Active Visualizer Section */}
+            {visualizerSection === 'chamber' ? (
+              <ChamberCanvas
+                gases={gases}
+                pressureKpa={pressureKpa}
+                gravityG={gravityG}
+                ventilationSpeed={ventilationSpeed}
+                fuel={selectedFuel}
+                isIgnited={isIgnited}
+                onToggleIgnite={() => setIsIgnited(!isIgnited)}
+                onCutVentilation={handleCutVentilation}
+                onPurgeChamber={handlePurgeChamber}
+                isBeginnerMode={isBeginnerMode}
+                flameTempK={analysis.flameTempK || 298}
+                dangerLevel={analysis.dangerLevel}
+              />
+            ) : (
+              <FlameOpticsSection
+                gases={gases}
+                pressureKpa={pressureKpa}
+                gravityG={gravityG}
+                ventilationSpeed={ventilationSpeed}
+                fuel={selectedFuel}
+                isIgnited={isIgnited}
+                onToggleIgnite={() => setIsIgnited(!isIgnited)}
+                flameTempK={analysis.flameTempK || 298}
+                dangerLevel={analysis.dangerLevel}
+              />
+            )}
 
             {/* Gas Mixer & Environmental Injectors Panel */}
             <GasMixerPanel
@@ -302,7 +400,7 @@ export default function App() {
                 }`}
               >
                 <Radio className="w-4 h-4" />
-                <span>Fire Safety Radar</span>
+                <span>6-Axis Safety Matrix</span>
               </button>
             </div>
 
@@ -398,7 +496,7 @@ export default function App() {
               Presentation Slides
             </button>
             <button onClick={() => setCommanderOpen(true)} className="hover:text-cyan-400 transition-colors">
-              Ask SI Commander
+              Ask Captain
             </button>
           </div>
         </div>

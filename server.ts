@@ -251,49 +251,53 @@ Provide a structured fire safety risk assessment with:
     const parsed = JSON.parse(response.text || '{}');
     return res.json(parsed);
   } catch (error: any) {
-    console.log('Gemini notice, activating local model:', error?.message || error);
+    console.log('Using local combustion engine (Gemini quota or offline).');
     return res.json(generateLocalFireAnalysis(req.body));
   }
 });
+
+import { generateCaptainResponse } from './src/services/captainIntelligence.ts';
 
 // Interactive Ask-Commander SI Endpoint
 app.post('/api/si/ask-commander', async (req, res) => {
   try {
     const { question, chamberState, isBeginnerMode } = req.body;
+    const hasValidKey = apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.length > 10;
 
-    if (!ai) {
-      return res.json({
-        answer: `[SI Commander Response]: In zero gravity, fire does not have "up" or "down" because hot air only floats when gravity pulls heavier cold air down! Under your current chamber setting (${chamberState?.gravityG}g, ${chamberState?.gases?.O2}% O2), flames behave as ${chamberState?.gravityG === 0 ? 'calm spherical blue orbs that suffocate unless fed by fans' : 'convective plumes'}. Always keep ventilation control ready!`,
-      });
-    }
-
-    const systemPrompt = `You are NULL-G SI, the world's most advanced aerospace fire safety Super Intelligence stationed aboard a deep space exploration cruiser.
-Your mission is to explain complex microgravity combustion, spacecraft fire safety, and atmospheric gas chemistry to human astronauts and space cadets.
+    if (ai && hasValidKey) {
+      const systemPrompt = `You are Captain, the world's most advanced aerospace fire safety Super Intelligence stationed aboard a deep space exploration cruiser.
+Your name is Captain. Your mission is to explain complex microgravity combustion, spacecraft fire safety, and atmospheric gas chemistry to human astronauts and space cadets.
 Style guidelines:
 - If isBeginnerMode is true: Explain using simple everyday analogies (campfires, blowing out candles, blankets, soup, vacuum cleaners). Avoid confusing jargon without immediate explanation. Be engaging, clear, and inspiring.
 - If isBeginnerMode is false: Provide rigorous aerospace combustion thermodynamics (buoyancy Grashof number, Lewis numbers, LOI, Saffire findings, NASA-STD-6001).
-- Keep answers concise, highly informative, and actionable (under 180 words).`;
+- Keep answers concise, highly informative, and actionable (under 200 words).
+- Introduce yourself or sign off as Captain.`;
 
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Ask Commander timeout')), 12000)
-    );
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Ask Commander timeout')), 10000)
+      );
 
-    const apiPromise = ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: `Current Chamber State: ${JSON.stringify(chamberState)}
+      const apiPromise = ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: `Current Chamber State: ${JSON.stringify(chamberState)}
 User Question: "${question}"`,
-      config: {
-        systemInstruction: systemPrompt,
-      },
-    });
+        config: {
+          systemInstruction: systemPrompt,
+        },
+      });
 
-    const response: any = await Promise.race([apiPromise, timeoutPromise]);
-    return res.json({ answer: response.text });
+      const response: any = await Promise.race([apiPromise, timeoutPromise]);
+      if (response && response.text) {
+        return res.json({ answer: response.text });
+      }
+    }
+
+    const captainAnswer = generateCaptainResponse(question, chamberState, isBeginnerMode);
+    return res.json({ answer: captainAnswer });
   } catch (error: any) {
-    console.log('Ask Commander notice, activating local response:', error?.message || error);
-    return res.json({
-      answer: `In microgravity, flames cannot rise because hot air has no buoyancy without gravity. They form glowing spheres that starve themselves in their own smoke unless the spacecraft fans blow fresh oxygen toward them!`,
-    });
+    console.log('Using Captain local response (Gemini quota or offline).');
+    const captainAnswer = generateCaptainResponse(req.body.question, req.body.chamberState, req.body.isBeginnerMode);
+    return res.json({ answer: captainAnswer });
   }
 });
 
